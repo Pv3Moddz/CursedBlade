@@ -1,0 +1,563 @@
+local queue_on_teleport = queue_on_teleport or syn.queue_on_teleport or queue_teleport
+if queue_on_teleport then
+    queue_on_teleport([[
+        repeat task.wait(5) until game:IsLoaded()
+        task.wait(10)
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Pv3Moddz/CursedBlade/refs/heads/main/ExecuteCode"))()
+    ]])
+end
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local Tween = game:GetService("TweenService")
+local VirtualUser = game:GetService("VirtualUser")
+
+local KeysHeld = {W=false, S=false, A=false, D=false}
+
+local AutoKill = false
+local FarmDelay = true
+local AutoKillRange = 1024
+local AutoCollect = false
+local KillLoot = false
+local AntiAfk = true
+local EspName = false
+local EspHighlight = false
+local NoClip = false
+local Fly = false
+local AntiVoid = true
+local InfJump = false
+local PlayerSpeed = 0
+local PlayerSpeedMultiplication = 0
+local JumpHeight = 0
+local HipHeight = 0
+
+local function GetEnumNames(enum)
+    local names = {}
+    for _, item in ipairs(enum:GetEnumItems()) do
+        table.insert(names, item.Name)
+    end
+    return names
+end
+
+local Luna = loadstring(game:HttpGet("https://raw.githubusercontent.com/Nebula-Softworks/Luna-Interface-Suite/refs/heads/master/source.lua", true))()
+local Window = Luna:CreateWindow({
+	Name = "Cursed Blade", -- This Is Title Of Your Window
+	Subtitle = "by: ༗ Pv3Moddz </>", -- A Gray Subtitle next To the main title.
+	LogoID = "82795327169782", -- The Asset ID of your logo. Set to nil if you do not have a logo for Luna to use.
+	LoadingEnabled = true, -- Whether to enable the loading animation. Set to false if you do not want the loading screen or have your own custom one.
+	LoadingTitle = "Luna Interface Suite", -- Header for loading screen
+	LoadingSubtitle = "by Nebula Softworks", -- Subtitle for loading screen
+
+	ConfigSettings = {
+		RootFolder = nil, -- The Root Folder Is Only If You Have A Hub With Multiple Game Scripts and u may remove it. DO NOT ADD A SLASH
+		ConfigFolder = "Big Hub" -- The Name Of The Folder Where Luna Will Store Configs For This Script. DO NOT ADD A SLASH
+	},
+
+	KeySystem = false, -- As Of Beta 6, Luna Has officially Implemented A Key System!
+	KeySettings = {
+		Title = "Luna Example Key",
+		Subtitle = "Key System",
+		Note = "Best Key System Ever! Also, Please Use A HWID Keysystem like Pelican, Luarmor etc. that provide key strings based on your HWID since putting a simple string is very easy to bypass",
+		SaveInRoot = false, -- Enabling will save the key in your RootFolder (YOU MUST HAVE ONE BEFORE ENABLING THIS OPTION)
+		SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
+		Key = {"Example Key"}, -- List of keys that will be accepted by the system, please use a system like Pelican or Luarmor that provide key strings based on your HWID since putting a simple string is very easy to bypass
+		SecondAction = {
+			Enabled = true, -- Set to false if you do not want a second action,
+			Type = "Link", -- Link / Discord.
+			Parameter = "ZTmZAFqNda" -- If Type is Discord, then put your invite link (DO NOT PUT DISCORD.GG/). Else, put the full link of your key system here.
+		}
+	}
+})
+Window:CreateHomeTab({
+	SupportedExecutors = {"Synapse X","Krnl","ProtoSmasher","Fluxus","Script-Ware","EasyExploits","Electron","JJSploit","Calamari","SirHurt","Sentinel","WEAREDEVS","Comet","Cellery","Wave","CODex","Delta","Xeno"},
+	DiscordInvite = "ZTmZAFqNda", -- same thing here
+	Icon = 1
+})
+
+local FarmSettingsTab = Window:CreateTab({
+	Name = "Farm Settings",
+	Icon = "devices",
+	ImageSource = "Material",
+	ShowTitle = true -- This will determine whether the big header text in the tab will show
+})
+FarmSettingsTab:CreateToggle({
+	Name = "Auto Farm",
+	Description = nil,
+	CurrentValue = AutoKill,
+	Callback = function(Value)
+		AutoKill = Value
+        task.spawn(function()
+            while AutoKill do
+                local PlayerChar = Player.Character
+                if PlayerChar then
+                    local PlayerHumanoid = PlayerChar:FindFirstChildOfClass("Humanoid")
+                    local PlayerHRP = PlayerChar:FindFirstChild("HumanoidRootPart")
+                    local netMessage = PlayerChar:FindFirstChild("NetMessage")
+                    local triggerSkill = netMessage and netMessage:FindFirstChild("TrigerSkill")
+                    if PlayerHumanoid and PlayerHRP and triggerSkill then
+                        local entityFolder = workspace:FindFirstChild("Entity")
+                        if entityFolder then
+                            for _, Mob in ipairs(entityFolder:GetChildren()) do
+                                if not AutoKill then break end
+                                local HRP = Mob:FindFirstChild("HumanoidRootPart")
+                                local Humanoid = Mob:FindFirstChildOfClass("Humanoid")
+                                if HRP and (not Humanoid or Humanoid.Health > 0) then
+                                    local dist = (HRP.Position - PlayerHRP.Position).Magnitude
+                                    if AutoKillRange == 0 or dist <= AutoKillRange then
+                                        local mobCFrame = HRP.CFrame
+                                        triggerSkill:FireServer(101, "Enter", mobCFrame, 1)
+                                        if FarmDelay then task.wait() end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+				task.wait()
+            end
+        end)
+	end
+})
+FarmSettingsTab:CreateToggle({
+	Name = "Auto Farm Delay",
+	Description = nil,
+	CurrentValue = FarmDelay,
+	Callback = function(Value)
+		FarmDelay = Value
+	end
+})
+FarmSettingsTab:CreateSlider({
+	Name = "Auto Farm Range",
+	Range = {0, 1024}, -- The Minimum And Maximum Values Respectively
+	Increment = 8, -- Basically The Changing Value/Rounding Off
+	CurrentValue = AutoKillRange, -- The Starting Value
+	Callback = function(Value)
+		AutoKillRange = Value
+	end
+})
+FarmSettingsTab:CreateToggle({
+	Name = "Auto Collect",
+	Description = nil,
+	CurrentValue = AutoCollect,
+	Callback = function(Value)
+		AutoCollect = Value
+		if Value then
+			local PlayerHRP = Player.Character.HumanoidRootPart
+			for _, Item in ipairs(workspace.FX:GetDescendants()) do
+				if Item:IsA("TouchTransmitter") and PlayerHRP then
+					local part = Item.Parent
+					if part and part:IsA("BasePart") then
+						firetouchinterest(PlayerHRP, part, 0)
+						task.wait()
+						firetouchinterest(PlayerHRP, part, 1)
+					end
+				end
+			end
+		end
+	end
+})
+FarmSettingsTab:CreateToggle({
+	Name = "Kill Loot",
+	Description = nil,
+	CurrentValue = KillLoot,
+	Callback = function(Value)
+		KillLoot = Value
+		if Value then
+			for _, Item in ipairs(workspace.FX:GetDescendants()) do
+				Item:Destroy()
+			end
+		end
+	end
+})
+
+local ServerSettingsTab = Window:CreateTab({
+	Name = "Server Settings",
+	Icon = "devices",
+	ImageSource = "Material",
+	ShowTitle = true -- This will determine whether the big header text in the tab will show
+})
+ServerSettingsTab:CreateToggle({
+	Name = "Anti Afk",
+	Description = nil,
+	CurrentValue = AntiAfk,
+	Callback = function(Value)
+		AntiAfk = Value
+	end
+})
+ServerSettingsTab:CreateDivider()
+ServerSettingsTab:CreateSection("Players")
+local SelectedPlayer = ServerSettingsTab:CreateDropdown({
+	Name = "Selected Player",
+	Description = nil,
+	Options = nil,
+	CurrentOption = nil,
+	MultipleOptions = false,
+	SpecialType = nil,
+	Callback = function(Options)
+	end
+})
+ServerSettingsTab:CreateButton({
+	Name = "Teleport To Player (Insta)",
+	Description = nil, -- Creates A Description For Users to know what the button does (looks bad if you use it all the time),
+	Callback = function()
+        local Option = SelectedPlayer.Settings.CurrentOption[1]
+        if type(Option) == "string" and #Option > 0 then
+			local Username = string.match(Option, "%((.-)%)")
+			if not Username then return end
+			local Player2 = game.Players:FindFirstChild(string.gsub(Username, "@", ""))
+			if Player2 and Player then
+				local Char = Player.Character
+				local Char2 = Player2.Character
+				if Char and Char2 then
+					local HRP = Char:FindFirstChild("HumanoidRootPart")
+					local HRP2 = Char2:FindFirstChild("HumanoidRootPart")
+					if HRP and HRP2 then
+						HRP.CFrame = HRP2.CFrame * CFrame.new(0, 5, 0)
+						return
+					end
+				end
+			end
+		end
+		Luna:Notification({Title = "Player Not Found!", Icon = "notifications_active", ImageSource = "Material"})
+	end
+})
+ServerSettingsTab:CreateButton({
+	Name = "Teleport To Player (Tween)",
+	Description = nil, -- Creates A Description For Users to know what the button does (looks bad if you use it all the time),
+	Callback = function()
+        local Option = SelectedPlayer.Settings.CurrentOption[1]
+        if type(Option) == "string" and #Option > 0 then
+			local Username = string.match(Option, "%((.-)%)")
+			if not Username then return end
+			local Player2 = game.Players:FindFirstChild(string.gsub(Username, "@", ""))
+			if Player2 and Player then
+				local Char = Player.Character
+				local Char2 = Player2.Character
+				if Char and Char2 then
+					local HRP = Char:FindFirstChild("HumanoidRootPart")
+					local HRP2 = Char2:FindFirstChild("HumanoidRootPart")
+					if HRP and HRP2 then
+						local TPTween = Tween:Create(HRP, TweenInfo.new((HRP2.Position - HRP.Position).Magnitude / PlayerSpeed, Enum.EasingStyle.Linear), {CFrame = HRP2.CFrame * CFrame.new(0, 5, 0)})
+						TPTween:Play()
+						TPTween.Completed:Wait()
+						return
+					end
+				end
+			end
+		end
+		Luna:Notification({Title = "Player Not Found!", Icon = "notifications_active", ImageSource = "Material"})
+	end
+})
+ServerSettingsTab:CreateDivider()
+ServerSettingsTab:CreateSection("Player Esp")
+ServerSettingsTab:CreateToggle({
+	Name = "Player Esp (Name)",
+	Description = nil,
+	CurrentValue = EspName,
+	Callback = function(Value)
+		EspName = Value
+	end
+})
+ServerSettingsTab:CreateToggle({
+	Name = "Player Esp (Highlight)",
+	Description = nil,
+	CurrentValue = EspHighlight,
+	Callback = function(Value)
+		EspHighlight = Value
+	end
+})
+
+local PlayerSettingsTab = Window:CreateTab({
+	Name = "Player Settings",
+	Icon = "build_circle",
+	ImageSource = "Material",
+	ShowTitle = true -- This will determine whether the big header text in the tab will show
+})
+PlayerSettingsTab:CreateToggle({
+	Name = "NoClip",
+	Description = nil,
+	CurrentValue = NoClip,
+	Callback = function(Value)
+		NoClip = Value
+	end
+})
+PlayerSettingsTab:CreateToggle({
+	Name = "Fly",
+	Description = nil,
+	CurrentValue = Fly,
+	Callback = function(Value)
+		Fly = Value
+	end
+})
+PlayerSettingsTab:CreateToggle({
+	Name = "InfJump",
+	Description = nil,
+	CurrentValue = InfJump,
+	Callback = function(Value)
+		InfJump = Value
+	end
+})
+PlayerSettingsTab:CreateToggle({
+	Name = "Anti Void",
+	Description = nil,
+	CurrentValue = AntiVoid,
+	Callback = function(Value)
+		AntiVoid = Value
+	end
+})
+PlayerSettingsTab:CreateSlider({
+	Name = "PlayerSpeed/FlySpeed",
+	Range = {0, 1024}, -- The Minimum And Maximum Values Respectively
+	Increment = 8, -- Basically The Changing Value/Rounding Off
+	CurrentValue = PlayerSpeed, -- The Starting Value
+	Callback = function(Value)
+		PlayerSpeed = Value
+	end
+})
+PlayerSettingsTab:CreateSlider({
+	Name = "PlayerSpeedMultiplication",
+	Range = {0, 10}, -- The Minimum And Maximum Values Respectively
+	Increment = 1, -- Basically The Changing Value/Rounding Off
+	CurrentValue = PlayerSpeedMultiplication, -- The Starting Value
+	Callback = function(Value)
+		PlayerSpeedMultiplication = Value
+	end
+})
+PlayerSettingsTab:CreateSlider({
+	Name = "Jump Height",
+	Range = {0, 1024}, -- The Minimum And Maximum Values Respectively
+	Increment = 1, -- Basically The Changing Value/Rounding Off
+	CurrentValue = JumpHeight, -- The Starting Value
+	Callback = function(Value)
+		JumpHeight = Value
+	end
+})
+PlayerSettingsTab:CreateSlider({
+	Name = "Hip Height",
+	Range = {0, 100}, -- The Minimum And Maximum Values Respectively
+	Increment = 1, -- Basically The Changing Value/Rounding Off
+	CurrentValue = HipHeight, -- The Starting Value
+	Callback = function(Value)
+		HipHeight = Value
+	end
+})
+local CameraSettingsTab = Window:CreateTab({
+	Name = "Camera Settings",
+	Icon = "camera_enhance",
+	ImageSource = "Material",
+	ShowTitle = true -- This will determine whether the big header text in the tab will show
+})
+CameraSettingsTab:CreateDropdown({
+	Name = "Camera Mode",
+	Description = nil,
+	Options = GetEnumNames(Enum.CameraMode),
+	CurrentOption = Player.CameraMode.Name,
+	MultipleOptions = false,
+	SpecialType = nil,
+	Callback = function(Options)
+		for _, EnumItem in ipairs(Enum.CameraMode:GetEnumItems()) do
+			if Options == EnumItem.Name then Player.CameraMode = EnumItem end
+		end
+	end
+})
+CameraSettingsTab:CreateDropdown({
+	Name = "Occlusion Mode",
+	Description = nil,
+	Options = GetEnumNames(Enum.DevCameraOcclusionMode),
+	CurrentOption = Player.DevCameraOcclusionMode.Name,
+	MultipleOptions = false,
+	SpecialType = nil,
+	Callback = function(Options)
+		for _, EnumItem in ipairs(Enum.DevCameraOcclusionMode:GetEnumItems()) do
+			if Options == EnumItem.Name then Player.DevCameraOcclusionMode = EnumItem end
+		end
+	end
+})
+CameraSettingsTab:CreateSlider({
+	Name = "Max Zoom Distance",
+	Range = {128, 1024}, -- The Minimum And Maximum Values Respectively
+	Increment = 1, -- Basically The Changing Value/Rounding Off
+	CurrentValue = Player.CameraMaxZoomDistance, -- The Starting Value
+	Callback = function(Value)
+		Player.CameraMaxZoomDistance = Value
+	end
+})
+Window:CreateTab({Name = "Theme", Icon = "palette", ImageSource = "Material", ShowTitle = false}):BuildThemeSection() -- Tab Should be the name of the tab you are adding this section to.
+Window:CreateTab({Name = "Settings", Icon = "settings", ImageSource = "Material", ShowTitle = false}):BuildConfigSection() -- Tab Should be the name of the tab you are adding this section to.
+
+local LastTick = 0
+RunService.Stepped:Connect(function()
+	local PlayerChar = Player.Character
+	if PlayerChar then
+		local PlayerHumanoid = PlayerChar:FindFirstChildOfClass("Humanoid")
+		local PlayerHRP = PlayerChar.HumanoidRootPart
+		if PlayerHumanoid and PlayerHRP then
+			if tick()-LastTick > 0.1 then
+				LastTick = tick()
+				for _, CurrentPlayer in ipairs(Players:GetChildren()) do
+					local CurrentChar = CurrentPlayer.Character
+					if CurrentChar then
+						if EspHighlight then
+							if not CurrentChar:FindFirstChild("PlayerEspHighlight") then
+								local PlayerEspHighlight = Instance.new("Highlight")
+								PlayerEspHighlight.Name = "PlayerEspHighlight"
+								PlayerEspHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+								PlayerEspHighlight.OutlineTransparency = 0.25
+								PlayerEspHighlight.FillTransparency = 0.5
+								PlayerEspHighlight.Adornee = CurrentChar
+								PlayerEspHighlight.Parent = CurrentChar
+							end
+						else
+							local PlayerEspHighlight = CurrentChar:FindFirstChild("PlayerEspHighlight")
+							if PlayerEspHighlight then
+								PlayerEspHighlight:Destroy()
+							end
+						end
+						if CurrentChar.Head and EspName then
+							if CurrentChar:FindFirstChild("PlayerEspName") then
+								local Distance = math.floor((PlayerHRP.Position - CurrentChar:FindFirstChild("HumanoidRootPart").Position).Magnitude) or 0
+								CurrentChar.PlayerEspName.PlayerEspText.Text = CurrentPlayer.DisplayName.."(@"..CurrentPlayer.Name..") | "..Distance.." Studs"
+							else
+								local PlayerEspName = Instance.new("BillboardGui")
+								PlayerEspName.Name = "PlayerEspName"
+								PlayerEspName.Size = UDim2.new(1,0,1,0)
+								PlayerEspName.Adornee = CurrentChar.Head
+								PlayerEspName.StudsOffset = Vector3.new(0,1.5,0)
+								PlayerEspName.AlwaysOnTop = true
+								PlayerEspName.Parent = CurrentChar
+								local PlayerEspText = Instance.new("TextLabel")
+								PlayerEspText.Name = "PlayerEspText"
+								PlayerEspText.Parent = PlayerEspName
+								PlayerEspText.Size = UDim2.new(1,0,1,0)
+								PlayerEspText.BackgroundTransparency = 1
+								PlayerEspText.TextColor3 = Color3.new(1, 1, 1)
+								PlayerEspText.TextStrokeTransparency = 0
+								PlayerEspText.Text = CurrentPlayer.DisplayName.."(@"..CurrentPlayer.Name..") | 0 Studs"
+								local PlayerEspTextStroke = Instance.new("UIStroke")
+								PlayerEspNameStroke.Parent = PlayerEspText
+							end
+						else
+							local PlayerEspName = CurrentChar:FindFirstChild("PlayerEspName")
+							if PlayerEspName then
+								PlayerEspName:Destroy()
+							end
+						end
+					end
+				end
+			end
+			if AntiVoid and PlayerHRP.CFrame.Y <= -450 then
+				PlayerHRP.CFrame = CFrame.new(PlayerHRP.Position.X, -400, PlayerHRP.Position.Z)
+				PlayerHRP.AssemblyLinearVelocity = Vector3.new(PlayerHRP.AssemblyLinearVelocity.X, 0, PlayerHRP.AssemblyLinearVelocity.Z)
+			end
+		end
+		if Fly then
+			local bodyVelocity = PlayerHRP:FindFirstChildOfClass("BodyVelocity")
+			local bodyGyro = PlayerHRP:FindFirstChildOfClass("BodyGyro")
+			if bodyVelocity and bodyGyro then
+				PlayerHumanoid.PlatformStand = true
+				PlayerHumanoid.AutoRotate = false
+				PlayerHRP.AssemblyAngularVelocity = Vector3.zero
+				local moveVector = Vector3.zero
+				if KeysHeld.W then moveVector = moveVector + Camera.CFrame.LookVector end
+				if KeysHeld.S then moveVector = moveVector - Camera.CFrame.LookVector end
+				if KeysHeld.D then moveVector = moveVector + Camera.CFrame.RightVector end
+				if KeysHeld.A then moveVector = moveVector - Camera.CFrame.RightVector end
+				if moveVector.Magnitude > 0 then bodyVelocity.Velocity = moveVector.Unit * PlayerSpeed
+				else bodyVelocity.Velocity = Vector3.zero end
+				bodyGyro.CFrame = Camera.CFrame
+			else
+				local bodyVelocity = Instance.new("BodyVelocity")
+				bodyVelocity.MaxForce = Vector3.new(999999999, 999999999, 999999999) -- Aplica força APENAS no eixo Y (rotação horizontal)
+				bodyVelocity.Velocity = Vector3.zero
+				bodyVelocity.Parent = PlayerHRP
+				local bodyGyro = Instance.new("BodyGyro")
+				bodyGyro.MaxTorque = Vector3.new(999999999, 999999999, 999999999) -- Aplica força APENAS no eixo Y (rotação horizontal)
+				bodyGyro.Parent = PlayerHRP
+			end
+		else
+			local bodyVelocity = PlayerHRP:FindFirstChildOfClass("BodyVelocity")
+			if bodyVelocity then bodyVelocity:Destroy() end
+			local bodyGyro = PlayerHRP:FindFirstChildOfClass("BodyGyro")
+			if bodyGyro then bodyGyro:Destroy() end
+			PlayerHumanoid.PlatformStand = false
+			PlayerHumanoid.AutoRotate = true
+			if PlayerSpeed > 0 then PlayerHumanoid.WalkSpeed = PlayerSpeed end
+			if JumpHeight > 0 then PlayerHumanoid.JumpHeight = JumpHeight end
+			PlayerHumanoid.HipHeight = HipHeight
+			if PlayerHumanoid.MoveDirection.Magnitude > 0 and PlayerSpeedMultiplication > 0 then
+				PlayerHRP.AssemblyLinearVelocity = PlayerHumanoid.MoveDirection * PlayerHumanoid.WalkSpeed * PlayerSpeedMultiplication + Vector3.new(0, PlayerHRP.AssemblyLinearVelocity.Y, 0)
+			end
+		end
+		if NoClip then
+			for _, part in ipairs(PlayerChar:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.CanCollide = false
+				end
+			end
+		else PlayerHRP.CanCollide = true end
+	end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    local Humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
+    if InfJump and Humanoid then
+		Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.W then KeysHeld.W = true end
+	if input.KeyCode == Enum.KeyCode.S then KeysHeld.S = true end
+	if input.KeyCode == Enum.KeyCode.A then KeysHeld.A = true end
+	if input.KeyCode == Enum.KeyCode.D then KeysHeld.D = true end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.KeyCode == Enum.KeyCode.W then KeysHeld.W = false end
+	if input.KeyCode == Enum.KeyCode.S then KeysHeld.S = false end
+	if input.KeyCode == Enum.KeyCode.A then KeysHeld.A = false end
+	if input.KeyCode == Enum.KeyCode.D then KeysHeld.D = false end
+end)
+
+Player.Idled:connect(function()
+	if AntiAfk then
+		VirtualUser:Button2Down(Vector2.new(0,0),Camera.CFrame)
+		wait(5)
+		VirtualUser:Button2Up(Vector2.new(0,0),Camera.CFrame)
+	end
+end)
+
+workspace.FX.DescendantAdded:Connect(function(descendant)
+	local character = Player and Player.Character
+	local PlayerHRP = character and character:FindFirstChild("HumanoidRootPart")
+	if descendant:IsA("TouchTransmitter") and AutoCollect and PlayerHRP then
+		local part = descendant.Parent
+		if part and part:IsA("BasePart") then
+			firetouchinterest(PlayerHRP, part, 0)
+			task.wait(0.05)
+			firetouchinterest(PlayerHRP, part, 1)
+		end
+	end
+	task.wait(10.0)
+	if KillLoot then
+		descendant:Destroy()
+	end
+end)
+
+local function PlayerTableRefresh()
+	local PlayersList = {}
+	for _, CurrentPlayer in ipairs(Players:GetPlayers()) do
+		table.insert(PlayersList, CurrentPlayer.DisplayName .. " (@" .. CurrentPlayer.Name .. ")")
+	end
+	SelectedPlayer:Set({Options = PlayersList})
+end
+PlayerTableRefresh()
+
+Players.PlayerAdded:Connect(PlayerTableRefresh)
+Players.PlayerRemoving:Connect(PlayerTableRefresh)
