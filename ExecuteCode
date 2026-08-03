@@ -22,6 +22,7 @@ local KeysHeld = {W=false, S=false, A=false, D=false}
 local AutoKill = false
 local FarmDelay = true
 local AutoKillRange = 1024
+local AutoDungeon = false
 local AutoCollect = false
 local KillLoot = false
 local AntiAfk = true
@@ -138,6 +139,21 @@ FarmSettingsTab:CreateSlider({
 	CurrentValue = AutoKillRange, -- The Starting Value
 	Callback = function(Value)
 		AutoKillRange = Value
+	end
+})
+FarmSettingsTab:CreateToggle({
+	Name = "Auto Dungeon",
+	Description = nil,
+	CurrentValue = AutoDungeon,
+	Callback = function(Value)
+		AutoDungeon = Value
+        for _, Mob in ipairs(workspace.Entity:GetChildren()) do
+			local Head = Mob:FindFirstChild("Head")
+			if Head then
+				Head:Destroy()
+			end
+			task.wait()
+		end
 	end
 })
 FarmSettingsTab:CreateToggle({
@@ -547,6 +563,16 @@ workspace.FX.DescendantAdded:Connect(function(descendant)
 	task.wait(10.0)
 	if KillLoot then
 		descendant:Destroy()
+	end
+end)
+
+workspace.Entity.ChildAdded:Connect(function(Child)
+	if AutoDungeon then
+		task.wait(2)
+		local Head = Child:FindFirstChild("Head")
+		if Head then
+			Head:Destroy()
+		end
 	end
 end)
 
